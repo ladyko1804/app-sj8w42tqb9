@@ -1,0 +1,20 @@
+{
+  "name": "МЧ · Мемо",
+  "short_name": "МЧ Мемо",
+  "description": "Вопросы проверки МЧ и личная карточка",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f6fa",
+  "theme_color": "#0d3b66",
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
