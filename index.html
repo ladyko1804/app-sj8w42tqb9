@@ -140,8 +140,8 @@ a{color:var(--acc)}
 "use strict";
 /* ---------- хранилище ---------- */
 var store={
-  get:function(k,d){ try{ var v=localStorage.getItem("mchmemo_"+k); return v===null?d:JSON.parse(v); }catch(e){ return d; } },
-  set:function(k,v){ try{ localStorage.setItem("mchmemo_"+k, JSON.stringify(v)); }catch(e){} }
+  get:function(k,d){ try{ var v=localStorage.getItem("memo_"+k); return v===null?d:JSON.parse(v); }catch(e){ return d; } },
+  set:function(k,v){ try{ localStorage.setItem("memo_"+k, JSON.stringify(v)); }catch(e){} }
 };
 function toast(msg){
   var t=document.getElementById("toast");
@@ -170,8 +170,10 @@ function fmtAnswer(txt){
 
 /* ---------- данные: вопросы ---------- */
 var BLOCKS={}, Q=[], CARD_GROUPS=[], FIELDS={};
+var RULES="", LEARN_INTRO="", CHECK_INTRO="", UI={script:[],lines:{}};
 function setData(d){
   BLOCKS=d.BLOCKS||{}; Q=d.Q||[]; CARD_GROUPS=d.CARD_GROUPS||[];
+  RULES=d.RULES||""; LEARN_INTRO=d.LEARN_INTRO||""; CHECK_INTRO=d.CHECK_INTRO||""; UI=d.UI||{script:[],lines:{}};
   FIELDS={};
   CARD_GROUPS.forEach(function(g){ g.items.forEach(function(it){ FIELDS[it.k]=it; }); });
 }
@@ -195,7 +197,7 @@ var state={tab:"learn", filter:"all", open:{}, check:null};
 function renderLearn(){
   var st=store.get("card",{});
   var html="";
-  html+='<div class="muted" style="margin:2px 2px 10px">21 вопрос проверки. Блок «Из памятки» — 10 вопросов, дальше по 5/2/2/2. Нажми на вопрос, чтобы увидеть эталонный ответ и как его оценивать.</div>';
+  html+='<div class="muted" style="margin:2px 2px 10px">'+esc(LEARN_INTRO)+"</div>";
   html+='<div class="chips">';
   html+='<button class="chip '+(state.filter==="all"?"on":"")+'" data-f="all">Все · 21</button>';
   Object.keys(BLOCKS).forEach(function(b){
@@ -213,8 +215,8 @@ function renderLearn(){
     html+='<div class="lbl">Эталонный ответ</div><div class="answer">'+fmtAnswer(a)+"</div>";
     if(q.memo){
       html+='<div class="lbl note">Памятка не заполнена — впиши критерии один раз</div>';
-      html+='<textarea data-memo="'+q.memo+'" placeholder="Критерии из памятки, каждый с новой строки">'+esc(memo[q.memo]||"")+"</textarea>";
-      html+='<button class="btn ghost" data-savememo="'+q.memo+'">Сохранить в памятку</button>';
+      html+='<textarea data-memo="'+q.memo+'" placeholder="Критерии из файла, каждый с новой строки">'+esc(memo[q.memo]||"")+"</textarea>";
+      html+='<button class="btn ghost" data-savememo="'+q.memo+'">Сохранить</button>';
     }
     if(q.c1){ html+='<div class="lbl ok">1 балл</div><div>'+fmtAnswer(q.c1)+"</div>"; }
     if(q.c0){ html+='<div class="lbl bad">0 баллов</div><div>'+fmtAnswer(q.c0)+"</div>"; }
@@ -225,17 +227,18 @@ function renderLearn(){
   return html;
 }
 
+function fillTpl(tpl,st){
+  return String(tpl).replace(/\{(\w+)\}/g, function(m,k){
+    if(k==="fio") return st.fio||"…";
+    if(k==="sv") return st.sv||"…";
+    var v=num(k,st);
+    return v===null?"…":fmtVal(k,st[k]);
+  });
+}
 function cardLineFor(id,st){
-  function g(k){ var v=num(k,st); return v===null?"—":fmtVal(k,st[k]); }
-  if(id===3) return "ТИМ участие: МК — "+g("tim_mk")+", ММ — "+g("tim_mm");
-  if(id===5) return "Магнит КМ: платина "+g("mk_plat")+", золото "+g("mk_gold")+", серебро "+g("mk_silver");
-  if(id===6) return "Магнит ММ: платина "+g("mm_plat")+", золото "+g("mm_gold")+", серебро "+g("mm_silver");
-  if(id===7) return "Перекрёсток — смотри выгрузку ЦАП: в одностраничнике этой сети нет";
-  if(id===8) return "Нарушители всего "+g("v_total")+" (устранено "+g("v_fixed")+", новые "+g("v_new")+"); МК "+g("mkv_gold")+"/"+g("mkv_silver")+" (золото/серебро), ДК "+g("mdkv_gold")+"/"+g("mdkv_silver")+", Дикси "+g("dxv_gold")+"/"+g("dxv_silver");
-  if(id===9) return "IR в месяц "+g("ir")+", ФТЕ "+g("fte");
-  if(id===10) return "План инвентаризаций в месяц "+g("inv_month");
-  if(id===18) return "Качество "+g("quality")+", выплата "+g("payout");
-  return "";
+  var tpl=(UI.lines||{})[String(id)];
+  if(!tpl) return "";
+  return fillTpl(tpl,st);
 }
 
 /* ---------- проверка ---------- */
@@ -254,12 +257,7 @@ function startCheck(){
 }
 function renderCheck(){
   var c=state.check;
-  if(!c){
-    return '<div class="card"><h2>Проверка МЧ</h2>'+
-      '<div class="muted">7 вопросов: 3 из памятки и по одному из блоков ФРОД, качество, грейды, приоритеты выкладки. Каждый вопрос — 0,5 балла, максимум 3,5.</div>'+
-      '<button class="btn full" id="startcheck">Начать проверку</button></div>'+
-      '<div class="card"><h2>Кого проверяем</h2><div class="muted">Выделенный МЧ, больше 3 месяцев на проекте, от 0,5 ФТЕ, по возможности без ГМ (исключение — СВ ГМ). У каждого СВ минимум 2 МЧ.</div></div>';
-  }
+  if(!c){ return UI.checkEmpty||""; }
   if(c.i>=c.list.length) return renderCheckResult();
   var q=c.list[c.i];
   var html="";
@@ -324,39 +322,15 @@ function renderCard(){
   return html;
 }
 function buildScript(st){
-  var fio=st.fio||"…", sv=st.sv||"…";
-  function g(k){ var v=num(k,st); return v===null?"…":fmtVal(k,st[k]); }
-  var s="Меня зовут "+fio+", мой супервайзер — "+sv+".\n";
-  s+="Стаж на проекте — "+g("stazh")+" месяцев, на маршруте "+g("tt_total")+" торговых точек, ФТЕ "+g("fte")+".\n";
-  s+="KPI: визитность "+g("viz")+" при плане 98%, инвентаризация "+g("inv")+" при плане 98%, OSA oral-B "+g("osa")+", доля прикассы oral-B "+g("sho")+".\n";
-  s+="Вес KPI: визитность 15%, инвентаризация 15%, ИР орал 15%.\n";
-  s+="Грейды: качество "+g("quality")+", выплата "+g("payout")+".\n";
-  s+="ФРОД за период — "+g("frod")+".\n";
-  s+="Инвентаризаций в месяц по плану — "+g("inv_month")+", ТТ с ИР — "+g("ir")+" в месяц.\n";
-  s+="Сети: Магнит Косметик — платина "+g("mk_plat")+", золото "+g("mk_gold")+", серебро "+g("mk_silver")+"; Магнит Минимаркет — платина "+g("mm_plat")+", золото "+g("mm_gold")+", серебро "+g("mm_silver")+".\n";
-  s+="ТИМ-программы закрыты: МК — "+g("tim_mk")+" ТТ, ММ — "+g("tim_mm")+" ТТ.\n";
-  s+="Нарушителей "+g("v_total")+": устранено "+g("v_fixed")+", новых "+g("v_new")+". По сетям — Магнит КМ: "+g("mkv_gold")+" золото, "+g("mkv_silver")+" серебро; Магнит ДК: "+g("mdkv_gold")+" золото, "+g("mdkv_silver")+" серебро, "+g("mdkv_other")+" другие; Дикси: "+g("dxv_gold")+" золото, "+g("dxv_silver")+" серебро, "+g("dxv_other")+" другие.";
-  s+="\nЗаработок: оклад 70%, KPI 30%, грейды с процентом, ТИМ.";
-  return s;
+  var lines=(UI.script||[]);
+  if(!lines.length) return "";
+  var out=[];
+  lines.forEach(function(l){ out.push(fillTpl(l,st)); });
+  return out.join("\n");
 }
 
 /* ---------- правила ---------- */
-function renderRules(){
-  return '<div class="card"><h2>Как проходит проверка</h2><div>'+
-    '<ul><li>7 вопросов: 3 из памятки и по одному из блоков ФРОД, качество, грейды, приоритеты выкладки.</li>'+
-    "<li>0,5 балла за каждый вопрос, максимум 3,5.</li>"+
-    "<li>Кого проверяют: выделенный МЧ, больше 3 месяцев, от 0,5 ФТЕ, по возможности без ГМ (исключение — СВ ГМ).</li>"+
-    "<li>У каждого СВ минимум 2 МЧ.</li></ul></div></div>"+
-    '<div class="card"><h2>Разделы</h2><div class="muted">'+
-    "Памятка — 10 вопросов про KPI, заработок, свои точки, ФТЕ и инвентаризацию.<br>"+
-    "ФРОД — 5 вопросов: 16 ошибок по трём блокам, критические и влияние на бонус.<br>"+
-    "Качество — 2 вопроса, критерии из памятки.<br>"+
-    "Грейды — 2 вопроса: процент в ЗП и критерии допуска.<br>"+
-    "Приоритеты выкладки — коллекции и номиналы кассет.</div></div>"+
-    '<div class="card"><h2>Чего в базе нет</h2><div class="muted">'+
-    "Критерии качества (муз. бокс, категория) и критерии допуска к премии грейдов в исходном файле не расписаны — только слово «памятка». Впиши их в разделе «Учить» на нужных вопросах, они сохранятся в телефоне.<br>"+
-    "Сеть Перекрёсток в одностраничнике не выводится — цифры по ней есть только в выгрузке ЦАП.</div></div>";
-}
+function renderRules(){ return RULES; }
 
 /* ---------- разбор xlsx в браузере ---------- */
 function unzip(buf){
@@ -550,7 +524,7 @@ document.addEventListener("change",function(e){
   }
 });
 /* ---------- замок ---------- */
-var PW_KEY="mchmemo_pw", booted=false;
+var PW_KEY="memo_pw", booted=false;
 function b64d(s){ var bin=atob(s), u8=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i); return u8; }
 function boot(){
   if(booted) return; booted=true;
