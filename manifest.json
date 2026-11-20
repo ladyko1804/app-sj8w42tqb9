@@ -1,7 +1,7 @@
 {
-  "name": "МЧ · Мемо",
-  "short_name": "МЧ Мемо",
-  "description": "Вопросы проверки МЧ и личная карточка",
+  "name": "Мемо",
+  "short_name": "Мемо",
+  "description": "Личные заметки и тренажёр",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
