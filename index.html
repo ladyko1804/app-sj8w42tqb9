@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>МЧ · Мемо</title>
+<meta name="theme-color" content="#0d3b66">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+:root{
+  --bg:#f4f6fa; --card:#fff; --ink:#12233d; --muted:#5d718f; --line:#dde5ef;
+  --blue:#0d3b66; --acc:#2f7ce0; --ok:#1f9d55; --bad:#d24a3d; --gold:#c9922b;
+  --r:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  background:var(--bg); color:var(--ink); font-size:16px; line-height:1.45;
+  padding-bottom:calc(72px + env(safe-area-inset-bottom));
+}
+header{
+  position:sticky; top:0; z-index:20; background:var(--blue); color:#fff;
+  padding:12px 16px calc(12px + env(safe-area-inset-top,0)) 16px;
+  padding-top:calc(12px + env(safe-area-inset-top,0));
+  box-shadow:0 2px 10px rgba(13,59,102,.25);
+}
+header h1{margin:0; font-size:17px; font-weight:600; letter-spacing:.2px}
+header .sub{font-size:12px; opacity:.75; margin-top:2px}
+main{max-width:760px; margin:0 auto; padding:14px 12px 24px}
+nav{
+  position:fixed; left:0; right:0; bottom:0; z-index:30; display:flex;
+  background:#fff; border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+nav button{
+  flex:1; border:0; background:none; padding:9px 4px 8px; font:inherit; font-size:11.5px;
+  color:var(--muted); display:flex; flex-direction:column; align-items:center; gap:3px;
+}
+nav button .ic{font-size:18px; line-height:1}
+nav button.on{color:var(--acc); font-weight:600}
+.card{background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:14px; margin-bottom:12px}
+.card h2{margin:0 0 8px; font-size:15px}
+.muted{color:var(--muted); font-size:13px}
+.chips{display:flex; gap:6px; overflow-x:auto; padding:2px 0 10px; scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  white-space:nowrap; border:1px solid var(--line); background:#fff; color:var(--ink);
+  border-radius:999px; padding:7px 13px; font:inherit; font-size:13px;
+}
+.chip.on{background:var(--blue); color:#fff; border-color:var(--blue)}
+.q{background:#fff; border:1px solid var(--line); border-radius:var(--r); margin-bottom:9px; overflow:hidden}
+.q>.head{display:flex; gap:10px; padding:12px 13px; cursor:pointer; align-items:flex-start}
+.num{
+  flex:0 0 26px; height:26px; border-radius:8px; background:#eaf1fb; color:var(--blue);
+  font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center;
+}
+.q>.head .t{font-size:14.5px; font-weight:500}
+.q .body{display:none; padding:0 13px 13px 49px; font-size:14px}
+.q.open .body{display:block}
+.q.open .head{background:#f8fbff}
+.lbl{font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); margin:10px 0 4px; font-weight:700}
+.lbl.ok{color:var(--ok)} .lbl.bad{color:var(--bad)} .lbl.note{color:var(--gold)}
+ul{margin:4px 0 0; padding-left:18px} li{margin:2px 0}
+.btn{
+  display:inline-block; border:0; border-radius:11px; padding:11px 16px; font:inherit; font-size:14.5px;
+  font-weight:600; background:var(--acc); color:#fff;
+}
+.btn.ghost{background:#fff; color:var(--blue); border:1px solid var(--line)}
+.btn.ok{background:var(--ok)} .btn.bad{background:var(--bad)}
+.btn.full{display:block; width:100%; text-align:center; margin-top:10px}
+.row{display:flex; gap:8px; flex-wrap:wrap}
+.grid{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.field{display:flex; flex-direction:column; gap:3px}
+.field label{font-size:11.5px; color:var(--muted)}
+.field input{
+  width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:10px;
+  font:inherit; font-size:15px; background:#fff; color:var(--ink);
+}
+.field input:focus{outline:2px solid #cfe0f8; border-color:var(--acc)}
+.big{font-size:22px; font-weight:700}
+.stat{background:#f8fbff; border:1px solid var(--line); border-radius:12px; padding:10px 12px}
+.stat .k{font-size:11.5px; color:var(--muted)}
+.stat .v{font-size:19px; font-weight:700; color:var(--blue)}
+.badge{display:inline-block; font-size:11px; padding:3px 8px; border-radius:999px; background:#eaf1fb; color:var(--blue); font-weight:600}
+.badge.f{background:#fdeceb; color:var(--bad)}
+.badge.g{background:#fbf3e2; color:var(--gold)}
+.progress{height:6px; background:#e6edf7; border-radius:99px; overflow:hidden; margin:10px 0}
+.progress i{display:block; height:100%; background:var(--acc); width:0; transition:width .25s}
+.answer{background:#f8fbff; border-left:3px solid var(--acc); border-radius:8px; padding:10px 12px; margin-top:8px}
+textarea{
+  width:100%; min-height:78px; padding:10px; border:1px solid var(--line); border-radius:10px;
+  font:inherit; font-size:14px; resize:vertical; background:#fff; color:var(--ink);
+}
+.toast{
+  position:fixed; left:50%; transform:translateX(-50%); bottom:88px; z-index:60;
+  background:#12233d; color:#fff; padding:10px 14px; border-radius:10px; font-size:13.5px;
+  max-width:88vw; opacity:0; pointer-events:none; transition:opacity .2s;
+}
+.toast.show{opacity:.96}
+.hide{display:none !important}
+.script{font-size:14.5px; line-height:1.55; white-space:pre-wrap}
+a{color:var(--acc)}
+</style>
+</head>
+<body>
+<header>
+  <h1>МЧ · Мемо</h1>
+  <div class="sub" id="subtitle">вопросы проверки и личная карточка</div>
+</header>
+<main id="app"></main>
+<nav>
+  <button data-tab="learn" class="on"><span class="ic">📚</span>Учить</button>
+  <button data-tab="check"><span class="ic">✅</span>Проверка</button>
+  <button data-tab="card"><span class="ic">🪪</span>Моя карточка</button>
+  <button data-tab="rules"><span class="ic">ℹ️</span>Правила</button>
+</nav>
+<div class="toast" id="toast"></div>
+<script>
+"use strict";
+/* ---------- хранилище ---------- */
+var store={
+  get:function(k,d){ try{ var v=localStorage.getItem("mchmemo_"+k); return v===null?d:JSON.parse(v); }catch(e){ return d; } },
+  set:function(k,v){ try{ localStorage.setItem("mchmemo_"+k, JSON.stringify(v)); }catch(e){} }
+};
+function toast(msg){
+  var t=document.getElementById("toast");
+  t.textContent=msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t=setTimeout(function(){ t.classList.remove("show"); },2200);
+}
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function nl2html(s){ return esc(s).split("\n").map(function(l){ return l; }).join("<br>"); }
+/* пункты ответа: строки, начинающиеся с цифры+точка или "-", превращаем в список */
+function fmtAnswer(txt){
+  if(!txt) return "";
+  var lines=String(txt).split("\n"), out="", inUl=false;
+  lines.forEach(function(l){
+    var isItem=/^\s*(\d+\.|—|-)\s+/.test(l);
+    if(isItem){
+      if(!inUl){ out+="<ul>"; inUl=true; }
+      out+="<li>"+esc(l.replace(/^\s*(\d+\.|—|-)\s+/,""))+"</li>";
+    }else{
+      if(inUl){ out+="</ul>"; inUl=false; }
+      if(l.trim()) out+="<div>"+esc(l)+"</div>";
+    }
+  });
+  if(inUl) out+="</ul>";
+  return out;
+}
+
+/* ---------- данные: вопросы ---------- */
+var BLOCKS={
+  pam:{name:"Из памятки", short:"Памятка", n:10, color:"#2f7ce0"},
+  fraud:{name:"ФРОД", short:"ФРОД", n:5, color:"#d24a3d"},
+  quality:{name:"Качество", short:"Качество", n:2, color:"#1f9d55"},
+  grade:{name:"Грейды", short:"Грейды", n:2, color:"#c9922b"},
+  prio:{name:"Приоритеты выкладки", short:"Приоритеты", n:2, color:"#6b4fbb"}
+};
+var Q=[
+{id:1,b:"pam",t:"Расскажи вес каждого своего KPI",
+ a:"МЧ Gillette: визитность — 15%, инвентаризация — 15%, ИР орал (вес орал называть не нужно).\nМЧ ГМ: визитность — 15% и отчёт гипермаркетов — 15%.",
+ c1:"Допустимые варианты:\n1. визитность 15 + инвентаризация 15\n2. визитность 15 + отчёт гипермаркета 15\n3. визитность 15 + инвентаризация 15 + отчёт гипермаркета 15",
+ c0:"Сказал неполностью или ответил неверно."},
+{id:2,b:"pam",t:"Расскажи план по своим KPI",
+ a:"Визитность — план 98%, инвентаризация — план 98%. МЧ ГМ дополнительно: отчёт гипермаркетов еженедельно, в первый рабочий день после выходного.",
+ c1:"План: визитность 98, инвентаризация 98 (и отчёт гипермаркета еженедельно, если ГМ).",
+ c0:"Сказал неполностью или ответил неверно."},
+{id:3,b:"pam",personal:true,t:"Есть ТТ с выполненными ТИМ-программами? В какой сети? Какой кластер (платина, золото, серебро и другие)?",
+ a:"Ответ индивидуальный — берётся из твоей карточки, блок «ТИМ участие»: сколько ТТ в сети МК и в сети ММ.",
+ c1:"Назвал сети и кластеры, где ТИМ выполнены, своими цифрами.",
+ c0:"Не назвал или назвал не свои точки."},
+{id:4,b:"pam",t:"Из чего складывается весь твой заработок на проекте?",
+ a:"Оклад — 70%, KPI — 30%, грейды с процентом, ТИМ (доп. программы). Если ТИМ нет, так и говорит: «ТИМ у меня нет».",
+ c1:"Перечислил всё.", c0:"Не сказал один и более пунктов."},
+{id:5,b:"pam",personal:true,t:"Сколько торговых точек на маршруте в сети Магнит Косметик — кластер платина? золото? серебро?",
+ a:"Ответ индивидуальный — цифры по каждому кластеру из своей карточки.",
+ c1:"Перечислил по каждому кластеру цифры, 0 магазинов — допустимый ответ.",
+ c0:"Пропустил кластер или не назвал цифры."},
+{id:6,b:"pam",personal:true,t:"Сколько торговых точек на маршруте в сети Магнит Минимаркет — платина? золото? серебро?",
+ a:"Ответ индивидуальный — цифры по каждому кластеру из своей карточки.",
+ c1:"Перечислил по каждому кластеру цифры, 0 допустим.",
+ c0:"Пропустил кластер или не назвал цифры."},
+{id:7,b:"pam",personal:true,t:"Сколько торговых точек на маршруте в сети Перекрёсток — платина? золото? серебро?",
+ a:"Ответ индивидуальный — цифры по каждому кластеру из своей карточки.",
+ c1:"Перечислил по каждому кластеру цифры, 0 допустим.",
+ c0:"Пропустил кластер или не назвал цифры.",
+ note:"Если МЧ говорит, что этой сети у него нет — спроси про Магнит или Магнит Косметик."},
+{id:8,b:"pam",personal:true,t:"Сколько торговых точек-нарушителей на маршруте? Раздели по кластерам и металлам (платина, золото, серебро, другие)",
+ a:"Ответ индивидуальный — из блока «Торговые точки нарушители» своей карточки.",
+ c1:"Перечислил по каждому кластеру цифры, 0 допустим.",
+ c0:"Не разделил по кластерам или назвал не свои цифры."},
+{id:9,b:"pam",personal:true,t:"Сколько ТТ с ИР? Какой у тебя ФТЕ?",
+ a:"Ответ индивидуальный: количество ТТ с ИР (может быть 0) и свой ФТЕ.",
+ c1:"Назвал сколько ТТ с ИР и назвал свой ФТЕ.",
+ c0:"Не ответил на одну из частей."},
+{id:10,b:"pam",personal:true,t:"В скольких торговых точках проведена инвентаризация в этом месяце, сколько ещё осталось?",
+ a:"Ответ индивидуальный — план и факт инвентаризаций за месяц из своей карточки.",
+ c1:"Назвал, сколько сделано и сколько осталось.",
+ c0:"Не назвал цифры.",
+ note:"Инвентаризация может не проводиться — тогда вопрос заменяется другим."},
+
+{id:11,b:"fraud",t:"Сколько всего ФРОД-ошибок? Назови ФРОДы только из блока «время»",
+ a:"Всего 16 ФРОД-ошибок. Блок «время» — 4 ошибки:\n1. Время визита менее 10 минут ИЛИ разница по времени первого фото «ДО» и последнего фото «ПОСЛЕ» менее 10 минут.\n2. ЛПР запретил работу, но визит более 10 минут.\n3. Разница между первым фото «ДО» работы и началом визита более 10 минут (для ГМ — 20 минут).\n4. Разница между предпоследним и последним фото «ПОСЛЕ» категории/прикассы более 10 минут.",
+ c1:"Допустимо не назвать 1 пункт.", c0:"Не назвал два и более пункта или назвал не те."},
+{id:12,b:"fraud",t:"Сколько всего ФРОД-ошибок? Назови ФРОДы только из блока «отчётность и закрытый доступ»",
+ a:"Блок «отчётность и закрытый доступ» — 3 ошибки:\n1. Отчёт представленности «ДО» не заполнен или заполнен с ошибками (все сети — более 30%, в дискаунтерах — более 10%).\n2. Ошибки при проведении инвентаризации: неверное или неполное заполнение остатков, отсутствие подписи и комментария, отсутствие акта инвентаризации.\n3. Ограничители открытого доступа на фото «ПОСЛЕ»: в категории или на прикассе любые хомуты, скотч и т.п., блокирующие продукцию.",
+ c1:"Допустимо не назвать 1 пункт.", c0:"Не назвал два и более пункта."},
+{id:13,b:"fraud",t:"Что такое ФРОД и как влияет на тебя?",
+ a:"ФРОД — нарушение во время визита, фальсификация.\nВлияет так: лишение грейдов, визит с ФРОД-ошибкой не оплачивают.",
+ c1:"Сказал, что это нарушение/фальсификация, и назвал последствия: грейды, неоплата визита.",
+ c0:"Не назвал последствия."},
+{id:14,b:"fraud",t:"Критические и менее критические ФРОД-ошибки — как они влияют на бонусную часть?",
+ a:"Если допустить более одной критической ошибки — лишение бонусной части. Менее критических ошибок можно допустить более четырёх.",
+ c1:"Ответил про бонусную часть и количество: критических более 1 — лишение; менее критических более 4.",
+ c0:"Неправильный ответ: если МЧ начинает говорить про грейды или про время. Правильный ответ — только про бонусную часть.",
+ note:"В файле формулировка «менее критических можно допустить более четырёх» — уточни у СВ, имеется в виду «до четырёх»."},
+{id:15,b:"fraud",t:"Сколько всего ФРОД-ошибок? Назови критичные нарушения",
+ a:"Критичные ФРОДы — 9:\n1. Фотографии «ДО» и «ПОСЛЕ» не прогружены, отсутствует одна из категорий.\n2. В IR фото сделаны не по сценам.\n3. Отсутствие ДМП в IR.\n4. Фотографии из другой торговой точки (подлог).\n5. Отсутствие одной или нескольких фото категории «ДО» или «ПОСЛЕ» работы.\n6. Несоответствие количества фото прикассового оборудования «ДО» и «ПОСЛЕ».\n7. Некачественные фото или фото без товара: пол/стены, чёрный экран, размытые фото.\n8. Любая посторонняя продукция на брендированном оборудовании GILLETTE на фото «ПОСЛЕ».\n9. Идентичные фото «ДО» и «ПОСЛЕ».",
+ c1:"Допустимо не назвать 2 пункта.", c0:"Не назвал три и более пункта."},
+
+{id:16,b:"quality",t:"Назови критерии качества для муз. бокса",
+ a:"Критерии берутся из памятки — впиши их в поле ниже один раз, дальше они будут показываться здесь.",
+ c1:"Допустимо не назвать 1 пункт.", c0:"Не назвал два и более пункта.",
+ memo:"memo_box"},
+{id:17,b:"quality",t:"Назови критерии качества для категории",
+ a:"Критерии берутся из памятки — впиши их в поле ниже.",
+ c1:"Допустимо не назвать 1 пункт.", c0:"Не назвал два и более пункта.",
+ memo:"memo_cat"},
+
+{id:18,b:"grade",personal:true,t:"Какой процент грейдов получаешь в ЗП? Какой у тебя процент качества?",
+ a:"Свои цифры: «выплата (грейды)» и «качество» из карточки.",
+ c1:"Назвал оба показателя.", c0:"Ошибки недопустимы."},
+{id:19,b:"grade",t:"Какие критерии допуска, чтобы получить премию грейдов?",
+ a:"Критерии берутся из памятки — впиши их в поле ниже.",
+ c1:"Допустимо не назвать 1 пункт.", c0:"Не назвал два и более пункта.",
+ memo:"memo_grade"},
+
+{id:20,b:"prio",t:"При расширении доли полки в мужской категории в каком процентном соотношении поделишь коллекции Labs, Fusion 5, Mach 3?",
+ a:"Labs — 20%, Fusion 5 — 50%, Mach 3 — 30%.",
+ c1:"Все три цифры верно.", c0:"Ошибки недопустимы."},
+{id:21,b:"prio",t:"При расширении доли полки или маленьком товарном запасе — какие номиналы кассет и в каком соотношении?",
+ a:"Приоритет 6 и 4 номинал — 60%. Затем 12 и 8 номинал — 20%. Последний приоритет, 2 номинал — 20%.",
+ c1:"Все цифры верно.", c0:"Ошибки недопустимы."}
+];
+
+/* ---------- данные: карточка ---------- */
+var CARD_GROUPS=[
+ {g:"Стаж", items:[
+   {k:"stazh", l:"стаж, месяцев"},
+   {k:"ir", l:"IR в месяц, шт"} ]},
+ {g:"KPI, %", items:[
+   {k:"viz", l:"визитность", pct:1},
+   {k:"inv", l:"инвентаризация", pct:1},
+   {k:"osa", l:"OSA oral-B", pct:1},
+   {k:"sho", l:"доля прикассы oral-B", pct:1} ]},
+ {g:"Грейды", items:[
+   {k:"quality", l:"качество (0–1 или %)", pct:1},
+   {k:"payout", l:"выплата, коэффициент"} ]},
+ {g:"ФРОД и ФТЕ", items:[
+   {k:"frod", l:"кол-во ФРОД"},
+   {k:"fte", l:"ФТЕ"} ]},
+ {g:"Инвентаризация", items:[
+   {k:"inv_month", l:"план в месяц, шт"} ]},
+ {g:"Торговые точки", items:[
+   {k:"tt_total", l:"всего ТТ"} ]},
+ {g:"ТОП, сеть МК (Магнит Косметик)", items:[
+   {k:"tim_mk", l:"ТИМ участие"},
+   {k:"mk_total", l:"ТОП всего"},
+   {k:"mk_plat", l:"платина"},
+   {k:"mk_gold", l:"золото"},
+   {k:"mk_silver", l:"серебро"} ]},
+ {g:"ТОП, сеть ММ (Магнит Минимаркет)", items:[
+   {k:"tim_mm", l:"ТИМ участие"},
+   {k:"mm_total", l:"ТОП всего"},
+   {k:"mm_plat", l:"платина"},
+   {k:"mm_gold", l:"золото"},
+   {k:"mm_silver", l:"серебро"} ]},
+ {g:"ТТ-нарушители", items:[
+   {k:"v_total", l:"всего"},
+   {k:"v_fixed", l:"устранено"},
+   {k:"v_new", l:"новые ТТ"} ]},
+ {g:"Нарушители: Магнит КМ", items:[
+   {k:"mkv_plat", l:"платина"},{k:"mkv_gold", l:"золото"},
+   {k:"mkv_silver", l:"серебро"},{k:"mkv_other", l:"другие"} ]},
+ {g:"Нарушители: Магнит ДК", items:[
+   {k:"mdkv_plat", l:"платина"},{k:"mdkv_gold", l:"золото"},
+   {k:"mdkv_silver", l:"серебро"},{k:"mdkv_other", l:"другие"} ]},
+ {g:"Нарушители: Дикси", items:[
+   {k:"dxv_plat", l:"платина"},{k:"dxv_gold", l:"золото"},
+   {k:"dxv_silver", l:"серебро"},{k:"dxv_other", l:"другие"} ]}
+];
+var FIELDS={};
+CARD_GROUPS.forEach(function(g){ g.items.forEach(function(it){ FIELDS[it.k]=it; }); });
+
+function fmtVal(k,v){
+  if(v===undefined||v===null||v==="") return "—";
+  var it=FIELDS[k];
+  var n=parseFloat(String(v).replace(",","."));
+  if(isNaN(n)) return String(v);
+  if(it&&it.pct) return (Math.round(n*10)/10).toLocaleString("ru-RU")+"%";
+  return (Math.round(n*100)/100).toLocaleString("ru-RU");
+}
+function num(k,store_){
+  var v=parseFloat(String(store_[k]==null?"":store_[k]).replace(",","."));
+  return isNaN(v)?null:v;
+}
+
+/* ---------- экраны ---------- */
+var state={tab:"learn", filter:"all", open:{}, check:null};
+
+function renderLearn(){
+  var st=store.get("card",{});
+  var html="";
+  html+='<div class="muted" style="margin:2px 2px 10px">21 вопрос проверки. Блок «Из памятки» — 10 вопросов, дальше по 5/2/2/2. Нажми на вопрос, чтобы увидеть эталонный ответ и как его оценивать.</div>';
+  html+='<div class="chips">';
+  html+='<button class="chip '+(state.filter==="all"?"on":"")+'" data-f="all">Все · 21</button>';
+  Object.keys(BLOCKS).forEach(function(b){
+    html+='<button class="chip '+(state.filter===b?"on":"")+'" data-f="'+b+'">'+esc(BLOCKS[b].short)+" · "+BLOCKS[b].n+"</button>";
+  });
+  html+='</div>';
+  Q.filter(function(q){ return state.filter==="all"||q.b===state.filter; }).forEach(function(q){
+    var open=!!state.open[q.id];
+    var memo=store.get("memos",{});
+    var a=q.a;
+    if(q.memo&&memo[q.memo]) a=memo[q.memo];
+    html+='<div class="q '+(open?"open":"")+'" data-q="'+q.id+'">';
+    html+='<div class="head"><div class="num">'+q.id+'</div><div class="t">'+esc(q.t)+"</div></div>";
+    html+='<div class="body">';
+    html+='<div class="lbl">Эталонный ответ</div><div class="answer">'+fmtAnswer(a)+"</div>";
+    if(q.memo){
+      html+='<div class="lbl note">Памятка не заполнена — впиши критерии один раз</div>';
+      html+='<textarea data-memo="'+q.memo+'" placeholder="Критерии из памятки, каждый с новой строки">'+esc(memo[q.memo]||"")+"</textarea>";
+      html+='<button class="btn ghost" data-savememo="'+q.memo+'">Сохранить в памятку</button>';
+    }
+    if(q.c1){ html+='<div class="lbl ok">1 балл</div><div>'+fmtAnswer(q.c1)+"</div>"; }
+    if(q.c0){ html+='<div class="lbl bad">0 баллов</div><div>'+fmtAnswer(q.c0)+"</div>"; }
+    if(q.note){ html+='<div class="lbl note">На заметку</div><div>'+fmtAnswer(q.note)+"</div>"; }
+    if(q.personal){ html+='<div class="lbl">Твои цифры</div><div class="muted">'+(cardLineFor(q.id,st)||"Заполни карточку — здесь появятся твои цифры.")+"</div>"; }
+    html+='</div></div>';
+  });
+  return html;
+}
+
+function cardLineFor(id,st){
+  function g(k){ var v=num(k,st); return v===null?"—":fmtVal(k,st[k]); }
+  if(id===3) return "ТИМ участие: МК — "+g("tim_mk")+", ММ — "+g("tim_mm");
+  if(id===5) return "Магнит КМ: платина "+g("mk_plat")+", золото "+g("mk_gold")+", серебро "+g("mk_silver");
+  if(id===6) return "Магнит ММ: платина "+g("mm_plat")+", золото "+g("mm_gold")+", серебро "+g("mm_silver");
+  if(id===7) return "Перекрёсток — смотри выгрузку ЦАП: в одностраничнике этой сети нет";
+  if(id===8) return "Нарушители всего "+g("v_total")+" (устранено "+g("v_fixed")+", новые "+g("v_new")+"); МК "+g("mkv_gold")+"/"+g("mkv_silver")+" (золото/серебро), ДК "+g("mdkv_gold")+"/"+g("mdkv_silver")+", Дикси "+g("dxv_gold")+"/"+g("dxv_silver");
+  if(id===9) return "IR в месяц "+g("ir")+", ФТЕ "+g("fte");
+  if(id===10) return "План инвентаризаций в месяц "+g("inv_month");
+  if(id===18) return "Качество "+g("quality")+", выплата "+g("payout");
+  return "";
+}
+
+/* ---------- проверка ---------- */
+function startCheck(){
+  var pam=Q.filter(function(q){ return q.b==="pam"; });
+  var pick=[];
+  var copy=pam.slice();
+  for(var i=0;i<3;i++){ pick.push(copy.splice(Math.floor(Math.random()*copy.length),1)[0]); }
+  ["fraud","quality","grade","prio"].forEach(function(b){
+    var arr=Q.filter(function(q){ return q.b===b; });
+    pick.push(arr[Math.floor(Math.random()*arr.length)]);
+  });
+  state.check={list:pick, i:0, res:[], revealed:false};
+  store.set("checkstate",state.check);
+  render();
+}
+function renderCheck(){
+  var c=state.check;
+  if(!c){
+    return '<div class="card"><h2>Проверка МЧ</h2>'+
+      '<div class="muted">7 вопросов: 3 из памятки и по одному из блоков ФРОД, качество, грейды, приоритеты выкладки. Каждый вопрос — 0,5 балла, максимум 3,5.</div>'+
+      '<button class="btn full" id="startcheck">Начать проверку</button></div>'+
+      '<div class="card"><h2>Кого проверяем</h2><div class="muted">Выделенный МЧ, больше 3 месяцев на проекте, от 0,5 ФТЕ, по возможности без ГМ (исключение — СВ ГМ). У каждого СВ минимум 2 МЧ.</div></div>';
+  }
+  if(c.i>=c.list.length) return renderCheckResult();
+  var q=c.list[c.i];
+  var html="";
+  html+='<div class="card"><div class="muted">Вопрос '+(c.i+1)+" из "+c.list.length+' · '+esc(BLOCKS[q.b].short)+'</div>';
+  html+='<div class="progress"><i style="width:'+(c.i/c.list.length*100)+'%"></i></div>';
+  html+='<div style="font-size:16px;font-weight:600;margin:6px 0 2px">'+esc(q.t)+"</div>";
+  if(q.personal){ var line=cardLineFor(q.id,store.get("card",{})); if(line) html+='<div class="muted" style="margin-top:6px">Свои цифры: '+esc(line)+"</div>"; }
+  if(!c.revealed){
+    html+='<button class="btn full ghost" id="reveal">Показать эталон</button>';
+  }else{
+    var memo=store.get("memos",{});
+    var a=(q.memo&&memo[q.memo])?memo[q.memo]:q.a;
+    html+='<div class="lbl">Эталон</div><div class="answer">'+fmtAnswer(a)+"</div>";
+    if(q.c1) html+='<div class="lbl ok">1 балл</div><div>'+fmtAnswer(q.c1)+"</div>";
+    if(q.c0) html+='<div class="lbl bad">0 баллов</div><div>'+fmtAnswer(q.c0)+"</div>";
+    if(q.note) html+='<div class="lbl note">На заметку</div><div>'+fmtAnswer(q.note)+"</div>";
+    html+='<div class="row" style="margin-top:12px"><button class="btn ok" style="flex:1" data-score="1">Ответил · 1 балл</button><button class="btn bad" style="flex:1" data-score="0">Не ответил · 0</button></div>';
+  }
+  html+="</div>";
+  return html;
+}
+function renderCheckResult(){
+  var c=state.check;
+  var sum=c.res.reduce(function(s,x){ return s+x.s; },0);
+  var score=(sum*0.5).toLocaleString("ru-RU");
+  var bad=c.res.filter(function(x){ return x.s===0; });
+  var html='<div class="card"><h2>Итог</h2><div class="big">'+score+" / 3,5</div>";
+  html+='<div class="muted" style="margin-top:6px">Правильно: '+sum+" из 7 вопросов.</div>";
+  html+="</div>";
+  html+='<div class="card"><h2>Что повторить</h2>';
+  if(!bad.length) html+='<div class="muted">Все вопросы закрыты. Так держать.</div>';
+  bad.forEach(function(x){
+    html+='<div style="padding:8px 0;border-bottom:1px solid var(--line)"><b>Вопрос '+x.id+".</b> "+esc(x.t)+'<div class="muted" style="margin-top:3px">Блок: '+esc(BLOCKS[x.b].short)+"</div></div>";
+  });
+  html+="</div>";
+  html+='<div class="row"><button class="btn" id="startcheck">Ещё раз</button><button class="btn ghost" id="clearchck">Сбросить</button></div>';
+  return html;
+}
+
+/* ---------- карточка ---------- */
+function renderCard(){
+  var st=store.get("card",{});
+  var html="";
+  html+='<div class="card"><h2>Моя карточка</h2>'+
+    '<div class="muted">Данные хранятся только в этом телефоне и никуда не отправляются. Заполни один раз — вопросы в разделе «Учить» и «Проверка» сразу подставят твои цифры.</div>'+
+    '<div class="field" style="margin-top:10px"><label>ФИО</label><input id="fio" value="'+esc(st.fio||"")+'" placeholder="Фамилия Имя Отчество"></div>'+
+    '<div class="field" style="margin-top:8px"><label>Мой супервайзер</label><input id="sv" value="'+esc(st.sv||"")+'" placeholder="ФИО СВ"></div>'+
+    '<label class="btn full ghost" style="position:relative;overflow:hidden">Загрузить одностраничник (xlsx)'+
+      '<input type="file" id="xlsx" accept=".xlsx" style="position:absolute;inset:0;opacity:0;width:100%"></label>'+
+    '<div class="muted" style="margin-top:8px">Файл разбирается прямо в телефоне — интернет не нужен, данные никуда не уходят.</div>'+
+    "</div>";
+  CARD_GROUPS.forEach(function(g){
+    html+='<div class="card"><h2>'+esc(g.g)+"</h2><div class=\"grid\">";
+    g.items.forEach(function(it){
+      html+='<div class="field"><label>'+esc(it.l)+'</label><input data-k="'+it.k+'" inputmode="decimal" value="'+esc(st[it.k]==null?"":st[it.k])+'"></div>';
+    });
+    html+="</div></div>";
+  });
+  html+='<div class="card"><h2>Как рассказать о себе</h2><div class="muted">Собирается из твоих цифр. Сначала коротко, потом пройди по блокам.</div><div class="script" id="script" style="margin-top:10px">'+esc(buildScript(st))+"</div>"+
+    '<button class="btn full ghost" id="copyscript">Скопировать текст</button></div>';
+  html+='<div class="card"><button class="btn full bad" id="resetcard">Очистить карточку</button></div>';
+  return html;
+}
+function buildScript(st){
+  var fio=st.fio||"…", sv=st.sv||"…";
+  function g(k){ var v=num(k,st); return v===null?"…":fmtVal(k,st[k]); }
+  var s="Меня зовут "+fio+", мой супервайзер — "+sv+".\n";
+  s+="Стаж на проекте — "+g("stazh")+" месяцев, на маршруте "+g("tt_total")+" торговых точек, ФТЕ "+g("fte")+".\n";
+  s+="KPI: визитность "+g("viz")+" при плане 98%, инвентаризация "+g("inv")+" при плане 98%, OSA oral-B "+g("osa")+", доля прикассы oral-B "+g("sho")+".\n";
+  s+="Вес KPI: визитность 15%, инвентаризация 15%, ИР орал 15%.\n";
+  s+="Грейды: качество "+g("quality")+", выплата "+g("payout")+".\n";
+  s+="ФРОД за период — "+g("frod")+".\n";
+  s+="Инвентаризаций в месяц по плану — "+g("inv_month")+", ТТ с ИР — "+g("ir")+" в месяц.\n";
+  s+="Сети: Магнит Косметик — платина "+g("mk_plat")+", золото "+g("mk_gold")+", серебро "+g("mk_silver")+"; Магнит Минимаркет — платина "+g("mm_plat")+", золото "+g("mm_gold")+", серебро "+g("mm_silver")+".\n";
+  s+="ТИМ-программы закрыты: МК — "+g("tim_mk")+" ТТ, ММ — "+g("tim_mm")+" ТТ.\n";
+  s+="Нарушителей "+g("v_total")+": устранено "+g("v_fixed")+", новых "+g("v_new")+". По сетям — Магнит КМ: "+g("mkv_gold")+" золото, "+g("mkv_silver")+" серебро; Магнит ДК: "+g("mdkv_gold")+" золото, "+g("mdkv_silver")+" серебро, "+g("mdkv_other")+" другие; Дикси: "+g("dxv_gold")+" золото, "+g("dxv_silver")+" серебро, "+g("dxv_other")+" другие.";
+  s+="\nЗаработок: оклад 70%, KPI 30%, грейды с процентом, ТИМ.";
+  return s;
+}
+
+/* ---------- правила ---------- */
+function renderRules(){
+  return '<div class="card"><h2>Как проходит проверка</h2><div>'+
+    '<ul><li>7 вопросов: 3 из памятки и по одному из блоков ФРОД, качество, грейды, приоритеты выкладки.</li>'+
+    "<li>0,5 балла за каждый вопрос, максимум 3,5.</li>"+
+    "<li>Кого проверяют: выделенный МЧ, больше 3 месяцев, от 0,5 ФТЕ, по возможности без ГМ (исключение — СВ ГМ).</li>"+
+    "<li>У каждого СВ минимум 2 МЧ.</li></ul></div></div>"+
+    '<div class="card"><h2>Разделы</h2><div class="muted">'+
+    "Памятка — 10 вопросов про KPI, заработок, свои точки, ФТЕ и инвентаризацию.<br>"+
+    "ФРОД — 5 вопросов: 16 ошибок по трём блокам, критические и влияние на бонус.<br>"+
+    "Качество — 2 вопроса, критерии из памятки.<br>"+
+    "Грейды — 2 вопроса: процент в ЗП и критерии допуска.<br>"+
+    "Приоритеты выкладки — коллекции и номиналы кассет.</div></div>"+
+    '<div class="card"><h2>Чего в базе нет</h2><div class="muted">'+
+    "Критерии качества (муз. бокс, категория) и критерии допуска к премии грейдов в исходном файле не расписаны — только слово «памятка». Впиши их в разделе «Учить» на нужных вопросах, они сохранятся в телефоне.<br>"+
+    "Сеть Перекрёсток в одностраничнике не выводится — цифры по ней есть только в выгрузке ЦАП.</div></div>";
+}
+
+/* ---------- разбор xlsx в браузере ---------- */
+function unzip(buf){
+  var u8=new Uint8Array(buf), dv=new DataView(buf), eocd=-1;
+  for(var i=u8.length-22;i>=Math.max(0,u8.length-66000);i--){
+    if(dv.getUint32(i,true)===0x06054b50){ eocd=i; break; }
+  }
+  if(eocd<0) throw new Error("это не xlsx");
+  var count=dv.getUint16(eocd+10,true), ofs=dv.getUint32(eocd+16,true), p=ofs, files={};
+  for(var n=0;n<count;n++){
+    if(dv.getUint32(p,true)!==0x02014b50) break;
+    var method=dv.getUint16(p+10,true), csize=dv.getUint32(p+20,true),
+        nameLen=dv.getUint16(p+28,true), extraLen=dv.getUint16(p+30,true),
+        cmtLen=dv.getUint16(p+32,true), lho=dv.getUint32(p+42,true);
+    var name=new TextDecoder("utf-8").decode(u8.subarray(p+46,p+46+nameLen));
+    var lNameLen=dv.getUint16(lho+26,true), lExtraLen=dv.getUint16(lho+28,true);
+    var start=lho+30+lNameLen+lExtraLen;
+    files[name]={method:method, data:u8.subarray(start,start+csize)};
+    p+=46+nameLen+extraLen+cmtLen;
+  }
+  return files;
+}
+function fileText(entry){
+  if(!entry) return Promise.resolve("");
+  if(entry.method===0) return Promise.resolve(new TextDecoder("utf-8").decode(entry.data));
+  if(typeof DecompressionStream==="undefined") return Promise.reject(new Error("браузер старый"));
+  var stream=new Blob([entry.data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return new Response(stream).text();
+}
+function xmlDoc(text){ return new DOMParser().parseFromString(text,"application/xml"); }
+function tNodes(el){
+  var out="", ts=el.getElementsByTagNameNS("*","t");
+  for(var i=0;i<ts.length;i++) out+=ts[i].textContent;
+  return out;
+}
+function parseXlsxCells(buf){
+  var files=unzip(buf);
+  var jobs=[
+    fileText(files["xl/workbook.xml"]),
+    fileText(files["xl/_rels/workbook.xml.rels"]),
+    fileText(files["xl/sharedStrings.xml"]) || Promise.resolve("")
+  ];
+  return Promise.all(jobs).then(function(res){
+    var wbDoc=xmlDoc(res[0]), relDoc=xmlDoc(res[1]), ssText=res[2]||"";
+    var sheets=wbDoc.getElementsByTagNameNS("*","sheet");
+    var target=null, rid=null;
+    for(var i=0;i<sheets.length;i++){
+      var nm=sheets[i].getAttribute("name")||"";
+      if(/страничник/i.test(nm)){ target=nm; rid=sheets[i].getAttribute("r:id")||sheets[i].getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships","id"); break; }
+    }
+    if(!target && sheets.length){
+      target=sheets[0].getAttribute("name")||"";
+      rid=sheets[0].getAttribute("r:id");
+    }
+    var path=null, rels=relDoc.getElementsByTagNameNS("*","Relationship");
+    for(var j=0;j<rels.length;j++){
+      if(rels[j].getAttribute("Id")===rid){
+        var t=rels[j].getAttribute("Target");
+        path=/^\//.test(t)? t.slice(1) : "xl/"+t.replace(/^xl\//,"");
+      }
+    }
+    if(!path) path="xl/worksheets/sheet1.xml";
+    var ss=[];
+    if(ssText){
+      var d=xmlDoc(ssText), si=d.getElementsByTagNameNS("*","si");
+      for(var s=0;s<si.length;s++) ss.push(tNodes(si[s]));
+    }
+    return fileText(files[path]).then(function(sheetText){
+      if(!sheetText) throw new Error("лист не найден");
+      var doc=xmlDoc(sheetText), cells={}, cs=doc.getElementsByTagNameNS("*","c");
+      for(var c=0;c<cs.length;c++){
+        var ref=cs[c].getAttribute("r"), type=cs[c].getAttribute("t");
+        var vEl=cs[c].getElementsByTagNameNS("*","v")[0];
+        var val=null;
+        if(type==="s"&&vEl){ val=ss[parseInt(vEl.textContent,10)]; }
+        else if(type==="inlineStr"){ val=tNodes(cs[c]); }
+        else if(vEl){ val=vEl.textContent; }
+        if(val!==null&&val!=="") cells[ref]=val;
+      }
+      return {sheet:target, cells:cells};
+    });
+  });
+}
+function importCard(cells){
+  function g(ref, scale){
+    var v=cells[ref];
+    if(v===undefined||v===null||v==="") return undefined;
+    var n=parseFloat(String(v).replace(",","."));
+    if(isNaN(n)) return undefined;
+    n=Math.round(n*10000)/10000;
+    if(scale) n=Math.round(n*scale*10)/10;
+    return n;
+  }
+  var st=store.get("card",{});
+  function set(k,ref,scale){ var v=g(ref,scale); if(v!==undefined) st[k]=v; }
+  if(cells["H2"]) st.fio=String(cells["H2"]).trim();
+  if(cells["H3"]) st.sv=String(cells["H3"]).trim();
+  set("stazh","F6"); set("ir","K6");
+  set("viz","C10",100); set("inv","D10",100); set("osa","E10",100); set("sho","F10",100);
+  set("quality","D13",100); set("payout","F13");
+  set("frod","F17"); set("fte","F20"); set("inv_month","F23");
+  set("tt_total","K9");
+  set("tim_mk","I12"); set("mk_total","I11"); set("mk_plat","I13"); set("mk_gold","I14"); set("mk_silver","I15");
+  set("tim_mm","K12"); set("mm_total","K11"); set("mm_plat","K13"); set("mm_gold","K14"); set("mm_silver","K15");
+  set("v_total","I18"); set("v_fixed","J18"); set("v_new","K18");
+  set("mkv_plat","I22"); set("mkv_gold","I23"); set("mkv_silver","I24"); set("mkv_other","I25");
+  set("mdkv_plat","I27"); set("mdkv_gold","I28"); set("mdkv_silver","I29"); set("mdkv_other","I30");
+  set("dxv_plat","I32"); set("dxv_gold","I33"); set("dxv_silver","I34"); set("dxv_other","I35");
+  store.set("card",st);
+  return {fio:st.fio, n:Object.keys(st).filter(function(k){ return st[k]!==""&&st[k]!=null; }).length};
+}
+
+/* ---------- рендер ---------- */
+function render(){
+  var app=document.getElementById("app");
+  var html="";
+  if(state.tab==="learn") html=renderLearn();
+  else if(state.tab==="check") html=renderCheck();
+  else if(state.tab==="card") html=renderCard();
+  else html=renderRules();
+  app.innerHTML=html;
+  var st=store.get("card",{});
+  document.getElementById("subtitle").textContent = st.fio? st.fio : "вопросы проверки и личная карточка";
+  Array.prototype.forEach.call(document.querySelectorAll("nav button"),function(b){
+    b.classList.toggle("on", b.getAttribute("data-tab")===state.tab);
+  });
+}
+document.addEventListener("click",function(e){
+  var t=e.target.closest ? e.target.closest("[data-f],[data-q],[data-tab],[data-score],[data-savememo],#startcheck,#reveal,#resetcard,#copyscript,#clearchck") : null;
+  if(!t) return;
+  if(t.hasAttribute("data-tab")){
+    state.tab=t.getAttribute("data-tab"); render(); window.scrollTo(0,0); return;
+  }
+  if(t.hasAttribute("data-f")){ state.filter=t.getAttribute("data-f"); render(); return; }
+  if(t.hasAttribute("data-q")){
+    if(!e.target.closest(".head")) return;
+    var id=t.getAttribute("data-q"); state.open[id]=!state.open[id]; render(); return;
+  }
+  if(t.hasAttribute("data-savememo")){
+    var key=t.getAttribute("data-savememo");
+    var ta=t.parentNode.querySelector('textarea[data-memo="'+key+'"]');
+    var memos=store.get("memos",{}); memos[key]=ta?ta.value:""; store.set("memos",memos);
+    toast("Памятка сохранена"); render(); return;
+  }
+  if(t.id==="startcheck"){ startCheck(); return; }
+  if(t.id==="clearchck"){ state.check=null; store.set("checkstate",null); render(); return; }
+  if(t.id==="reveal"){ state.check.revealed=true; render(); return; }
+  if(t.hasAttribute("data-score")){
+    var c=state.check, q=c.list[c.i];
+    c.res.push({id:q.id,t:q.t,b:q.b,s:parseInt(t.getAttribute("data-score"),10)});
+    c.i++; c.revealed=false; store.set("checkstate",c); render(); window.scrollTo(0,0); return;
+  }
+  if(t.id==="resetcard"){
+    if(confirm("Очистить карточку на этом телефоне?")){ store.set("card",{}); toast("Карточка очищена"); render(); }
+    return;
+  }
+  if(t.id==="copyscript"){
+    var txt=document.getElementById("script").textContent;
+    if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(function(){ toast("Текст скопирован"); }); }
+    else toast("Выдели текст и скопируй вручную");
+    return;
+  }
+});
+document.addEventListener("input",function(e){
+  var t=e.target;
+  if(t.hasAttribute&&t.hasAttribute("data-k")){
+    var st=store.get("card",{}); st[t.getAttribute("data-k")]=t.value; store.set("card",st);
+    var sc=document.getElementById("script"); if(sc) sc.textContent=buildScript(st);
+  }
+  if(t.id==="fio"||t.id==="sv"){
+    var s2=store.get("card",{}); s2[t.id]=t.value; store.set("card",s2);
+    var sc2=document.getElementById("script"); if(sc2) sc2.textContent=buildScript(s2);
+    if(t.id==="fio") document.getElementById("subtitle").textContent=t.value||"вопросы проверки и личная карточка";
+  }
+});
+document.addEventListener("change",function(e){
+  if(e.target&&e.target.id==="xlsx"){
+    var f=e.target.files&&e.target.files[0];
+    if(!f) return;
+    var fr=new FileReader();
+    fr.onload=function(){
+      try{
+        parseXlsxCells(fr.result).then(function(res){
+          var info=importCard(res.cells);
+          toast("Загружено: "+(info.fio||"карточка")+" · лист «"+res.sheet+"»");
+          render();
+        }).catch(function(err){ toast("Не разобрал файл: "+err.message+". Заполни поля руками."); });
+      }catch(err){ toast("Не разобрал файл: "+err.message); }
+    };
+    fr.readAsArrayBuffer(f);
+  }
+});
+/* восстановить незаконченную проверку */
+(function(){
+  var saved=store.get("checkstate",null);
+  if(saved&&saved.list&&saved.list.length===7) state.check=saved;
+})();
+render();
+if("serviceWorker" in navigator){
+  window.addEventListener("load",function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
+}
+</script>
+</body>
+</html>
